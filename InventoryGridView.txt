@@ -1,7 +1,7 @@
 ## Title: Inventory Grid View
 ## Author: Randactyl, ingeniousclown
-## Version: 1.5.3.0
-## APIVersion: 100013
+## Version: 1.5.4.0
+## APIVersion: 100014
 ## SavedVariables: InventoryGridView_Settings
 
 lib\LibStub\LibStub.lua
@@ -16,6 +16,7 @@ lib\LibAddonMenu-2.0\controls\description.lua
 lib\LibAddonMenu-2.0\controls\dropdown.lua
 lib\LibAddonMenu-2.0\controls\editbox.lua
 lib\LibAddonMenu-2.0\controls\header.lua
+lib\LibAddonMenu-2.0\controls\iconpicker.lua
 lib\LibAddonMenu-2.0\controls\slider.lua
 lib\LibAddonMenu-2.0\controls\texture.lua
 
