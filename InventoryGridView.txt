@@ -1,7 +1,7 @@
 ## Title: Inventory Grid View
 ## Author: Randactyl, ingeniousclown
-## Version: 2.0.2.0
-## APIVersion: 100017 100018
+## Version: 2.0.3.0
+## APIVersion: 100018
 ## SavedVariables: InventoryGridView_Settings
 
 lib\LibStub\LibStub.lua
@@ -37,3 +37,5 @@ skins\Rushmik\rushmik.lua
 skins\Classic\classic.lua
 skins\Circles\circles.lua
 skins\Clean\clean.lua
+
+hax.lua
