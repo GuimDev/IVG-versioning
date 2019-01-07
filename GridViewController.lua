@@ -640,7 +640,7 @@ function InitGridView( isGrid )
             listView.dataTypes[1].setupCallback = 
                 function(rowControl, slot)                      
                     rowControl.isGrid = isGrid
-                    rowControl:GetNamedChild("Button").customTooltipAnchor = igvTooltipAnchor
+                    --rowControl:GetNamedChild("Button").customTooltipAnchor = igvTooltipAnchor
                     hookedFunctions(rowControl, slot)
                 end
         end
