@@ -1,7 +1,7 @@
 ------------------------------------------------------------------
 --InventoryGridView.lua
 --Author: ingeniousclown, Randactyl
---v1.3.1
+--v1.3.2
 
 --InventoryGridView was designed to try and leverage the default
 --UI as much as possible to create a grid view.  The result is
@@ -67,6 +67,10 @@ local function AddButton(parentWindow, inventoryId)
 end
 
 --override this function so I can display AP cost in the store view. Added currencyType.
+local SELL_REASON_COLOR = ZO_ColorDef:New( GetInterfaceColor(INTERFACE_COLOR_TYPE_ITEM_TOOLTIP, ITEM_TOOLTIP_COLOR_SELLS_FOR) )
+local REASON_CURRENCY_SPACING = 3
+local ITEM_TOOLTIP_CURRENCY_OPTIONS = { showTooltips = false }
+local MONEY_LINE_HEIGHT = 18
 function ZO_ItemTooltip_AddMoney(tooltipControl, amount, reason, notEnough, currencyType)
     local moneyLine = GetControl(tooltipControl, "SellPrice")        
     local reasonLabel = GetControl(moneyLine, "Reason")
