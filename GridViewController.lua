@@ -362,24 +362,30 @@ end
 local function ReshapeSlot(control, isGrid, isOutlines, width, height, forceUpdate)
     if control == nil then return end
 
-    local LIST_SLOT_BACKGROUND = [[EsoUI/Art/Miscellaneous/listItem_backdrop.dds]]
-    local LIST_SLOT_HOVER = [[EsoUI/Art/Miscellaneous/listitem_highlight.dds]]
     local ICON_MULT = 0.77
 
-    control:GetNamedChild("SellPrice"):SetHidden(isGrid)
+    --show/hide sell price label
+    local sell = control:GetNamedChild("SellPrice")
+    sell:SetHidden(isGrid)
+    --make sure sell price label stays hidden
+    local oldSetHidden = sell.SetHidden
+    sell.SetHidden = function(sell, shouldHide)
+        if isGrid then return end
+        oldSetHidden(sell, shouldHide)
+    end
 
     if control.isGrid ~= isGrid or forceUpdate then
         control.isGrid = isGrid
-        local thisName = control:GetName()
 
         local button = control:GetNamedChild("Button")
         local bg = control:GetNamedChild("Bg")
         local new = control:GetNamedChild("Status")
         local name = control:GetNamedChild("Name")
         local stat = control:GetNamedChild("StatValue")
-        local sell = control:GetNamedChild("SellPrice")
         local highlight = control:GetNamedChild("Highlight")
         local outline = control:GetNamedChild("Outline")
+
+        --create outline texture for control if missing
         if not outline then
             outline = WINDOW_MANAGER:CreateControl(control:GetName() .. "Outline", control, CT_TEXTURE)
             outline:SetAnchor(CENTER, control, CENTER)
@@ -404,7 +410,6 @@ local function ReshapeSlot(control, isGrid, isOutlines, width, height, forceUpda
 
             bg:SetTexture(TEXTURE_SET.BACKGROUND)
             bg:SetTextureCoords(0, 1, 0, 1)
-            sell:SetAlpha(0)
 
             if isOutlines then
                 outline:SetTexture(TEXTURE_SET.OUTLINE)
@@ -414,6 +419,9 @@ local function ReshapeSlot(control, isGrid, isOutlines, width, height, forceUpda
             end
             AddColor(control)
         else
+            local LIST_SLOT_BACKGROUND = [[EsoUI/Art/Miscellaneous/listItem_backdrop.dds]]
+            local LIST_SLOT_HOVER = [[EsoUI/Art/Miscellaneous/listitem_highlight.dds]]
+
             button:SetAnchor(CENTER, control, TOPLEFT, 47, 26)
 
             if new then new:SetAnchor(CENTER, control, TOPLEFT, 20, 27) end
@@ -429,7 +437,6 @@ local function ReshapeSlot(control, isGrid, isOutlines, width, height, forceUpda
             bg:SetTexture(LIST_SLOT_BACKGROUND)
             bg:SetTextureCoords(0, 1, 0, .8125)
             bg:SetColor(1, 1, 1, 1)
-            sell:SetAlpha(1)
         end
     end
 end
