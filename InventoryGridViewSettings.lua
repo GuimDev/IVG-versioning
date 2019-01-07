@@ -124,6 +124,9 @@ function InventoryGridViewSettings:GetGridSize()
 end
 
 function InventoryGridViewSettings:GetTextureSet()
+	if TEXTURES[settings.skinChoice] == nil then
+		settings.skinChoice = "Rushmik"
+	end
 	return TEXTURES[settings.skinChoice]
 end
 
@@ -161,7 +164,7 @@ function InventoryGridViewSettings:CreateOptionsMenu()
 		type = "panel",
 		name = "Inventory Grid View",
 		author = "ingeniousclown and Randactyl",
-		version = "1.1.5",
+		version = "1.3.7.0",
 		slashCommand = "/inventorygridview",
 		registerForRefresh = true
 	}
