@@ -52,7 +52,6 @@ local QUALITY = {
 	["Legendary"] = ITEM_QUALITY_LEGENDARY
 }
 
-
 function InventoryGridViewSettings:New()
 	local obj = ZO_Object.New(self)
 	obj:Initialize()

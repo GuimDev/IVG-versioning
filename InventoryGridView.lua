@@ -9,68 +9,24 @@
 
 --Main functions for the mod.
 ------------------------------------------------------------------
-
-local BAGS = ZO_PlayerInventoryBackpack		                          --bagId = 1
-local QUEST = ZO_PlayerInventoryQuest		                          --bagId = 2
-local BANK = ZO_PlayerBankBackpack			                          --bagId = 3
-local GUILD_BANK = ZO_GuildBankBackpack		                          --bagId = 4
-local STORE = ZO_StoreWindowList			                          --bagId = 5
-local BUYBACK = ZO_BuyBackList				                          --bagId = 6
---local REFINE = ZO_SmithingTopLevelRefinementPanelInventoryBackpack    --bagId = 7
-
 local IGVSettings = nil
+
+local BAGS = ZO_PlayerInventoryBackpack                               --bagId = 1
+local QUEST = ZO_PlayerInventoryQuest                                 --bagId = 2
+local BANK = ZO_PlayerBankBackpack                                    --bagId = 3
+local GUILD_BANK = ZO_GuildBankBackpack                               --bagId = 4
+local STORE = ZO_StoreWindowList                                      --bagId = 5
+local BUYBACK = ZO_BuyBackList                                        --bagId = 6
+--local REFINE = ZO_SmithingTopLevelRefinementPanelInventoryBackpack    --bagId = 7
 
 local toggleButtonTextures = {}
 
-local _
-
-function InventoryGridView_SetToggleButtonTexture()
-    for _,v in pairs(toggleButtonTextures) do
-        v:SetTexture(IGVSettings:GetTextureSet().TOGGLE)
-    end
-end
-
-local function ButtonClickHandler(button)
-	IGVSettings:ToggleGrid(button.inventoryId)
-
-    -- quest bag uses the same button as inventory, have to piggyback instead of making separate button
-    if(button.inventoryId == INVENTORY_BACKPACK) then
-        InventoryGridView_ToggleGrid(button.itemArea:GetParent():GetNamedChild("Quest"), not button.itemArea.isGrid)
-    end
-	InventoryGridView_ToggleGrid(button.itemArea, not button.itemArea.isGrid)
-end
-
---parentWindow: parent of ZO_PlayerInventoryBackpack, etc
-local function AddButton(parentWindow, inventoryId)
-    --create the button
-    local button = WINDOW_MANAGER:CreateControl(parentWindow:GetName() .. "_GridButton", parentWindow, CT_BUTTON)
-    button:SetDimensions(24,24)
-    button:SetAnchor(TOP, parentWindow, BOTTOM, 12, 6)
-    button:SetFont("ZoFontGameSmall")
-    button:SetHandler("OnClicked", ButtonClickHandler)
-    button:SetMouseEnabled(true)
-
-    --where should the button go?
-    if inventoryId == STORE.bagId or inventoryId == BUYBACK.bagId then
-    	button.itemArea = parentWindow:GetNamedChild("List")
-    else
-    	button.itemArea = parentWindow:GetNamedChild("Backpack")
-    end
-    button.inventoryId = inventoryId
-
-    local texture = WINDOW_MANAGER:CreateControl(parentWindow:GetName() .. "_GridButtonTexture", button, CT_TEXTURE)
-    texture:SetAnchorFill()
-
-    table.insert(toggleButtonTextures, texture)
-
-    -- texture:SetColor(1, 1, 1, 1)
-end
-
---override this function so I can display AP cost in the store view. Added currencyType.
 local SELL_REASON_COLOR = ZO_ColorDef:New( GetInterfaceColor(INTERFACE_COLOR_TYPE_ITEM_TOOLTIP, ITEM_TOOLTIP_COLOR_SELLS_FOR) )
 local REASON_CURRENCY_SPACING = 3
 local ITEM_TOOLTIP_CURRENCY_OPTIONS = { showTooltips = false }
 local MONEY_LINE_HEIGHT = 18
+
+--override this function so I can display AP cost in the store view. Added currencyType.
 function ZO_ItemTooltip_AddMoney(tooltipControl, amount, reason, notEnough, currencyType)
     local moneyLine = GetControl(tooltipControl, "SellPrice")        
     local reasonLabel = GetControl(moneyLine, "Reason")
@@ -113,7 +69,6 @@ function ZO_ItemTooltip_AddMoney(tooltipControl, amount, reason, notEnough, curr
     moneyLine:SetDimensions(width, MONEY_LINE_HEIGHT)
 end
 
---rowControl: the item control
 local function AddGold(rowControl)
     if(not rowControl.dataEntry) then return end
 
@@ -123,28 +78,27 @@ local function AddGold(rowControl)
     local currencyType, notEnough
 
     for _,v in pairs(rowControl:GetNamedChild("SellPrice").currencyArgs) do
-    	if(v.isUsed == true) then 
-    		currencyType = v.type
-    		notEnough = v.notEnough
-    	end
+        if(v.isUsed == true) then 
+            currencyType = v.type
+            notEnough = v.notEnough
+        end
     end
 
     if bagId == STORE.bagId or bagId == BUYBACK.bagId then
-    	if(currencyType == CURRENCY_TYPE_ALLIANCE_POINTS) then
-    		sellPrice = rowControl.dataEntry.data.currencyQuantity1
-    	else
-    		sellPrice = rowControl.dataEntry.data.price
-    	end
-    	stack = rowControl.dataEntry.data.stack
+        if(currencyType == CURRENCY_TYPE_ALLIANCE_POINTS) then
+            sellPrice = rowControl.dataEntry.data.currencyQuantity1
+        else
+            sellPrice = rowControl.dataEntry.data.price
+        end
+        stack = rowControl.dataEntry.data.stack
 
-    	ZO_ItemTooltip_AddMoney(ItemTooltip, sellPrice * stack, 0, notEnough, currencyType)
+        ZO_ItemTooltip_AddMoney(ItemTooltip, sellPrice * stack, 0, notEnough, currencyType)
     else
-    	_, stack, sellPrice = GetItemInfo(bagId, slotIndex)
+        _, stack, sellPrice = GetItemInfo(bagId, slotIndex)
         ZO_ItemTooltip_AddMoney(ItemTooltip, sellPrice * stack)
     end
 end
 
---rowControl: the item control
 local function AddGoldSoon(rowControl)
     if(rowControl:GetParent():GetParent().bagId == INVENTORY_QUEST_ITEM) then return end
     if(rowControl and rowControl.isGrid and IGVSettings:IsShowValueTooltip()) then
@@ -152,19 +106,63 @@ local function AddGoldSoon(rowControl)
     end
 end
 
-local function InventoryGridViewLoaded(eventCode, addOnName)
-    if(addOnName ~= "InventoryGridView") then
-        return
+function InventoryGridView_SetToggleButtonTexture()
+    for _,v in pairs(toggleButtonTextures) do
+        v:SetTexture(IGVSettings:GetTextureSet().TOGGLE)
     end
+end
+
+local function ButtonClickHandler(button)
+    IGVSettings:ToggleGrid(button.inventoryId)
+
+    -- quest bag uses the same button as inventory, have to piggyback instead of making separate button
+    if(button.inventoryId == INVENTORY_BACKPACK) then
+        InventoryGridView_ToggleGrid(button.itemArea:GetParent():GetNamedChild("Quest"), not button.itemArea.isGrid)
+    end
+    InventoryGridView_ToggleGrid(button.itemArea, not button.itemArea.isGrid)
+end
+
+--parentWindow: parent of ZO_PlayerInventoryBackpack, etc
+local function AddButton(parentWindow, inventoryId)
+    --create the button
+    local button = WINDOW_MANAGER:CreateControl(parentWindow:GetName() .. "_GridButton", parentWindow, CT_BUTTON)
+    button:SetDimensions(24,24)
+    button:SetAnchor(TOP, parentWindow, BOTTOM, 12, 6)
+    button:SetFont("ZoFontGameSmall")
+    button:SetHandler("OnClicked", ButtonClickHandler)
+    button:SetMouseEnabled(true)
+
+    --where should the button go?
+    if inventoryId == STORE.bagId or inventoryId == BUYBACK.bagId then
+        button.itemArea = parentWindow:GetNamedChild("List")
+    else
+        button.itemArea = parentWindow:GetNamedChild("Backpack")
+    end
+    button.inventoryId = inventoryId
+
+    local texture = WINDOW_MANAGER:CreateControl(parentWindow:GetName() .. "_GridButtonTexture", button, CT_TEXTURE)
+    texture:SetAnchorFill()
+
+    table.insert(toggleButtonTextures, texture)
+
+    -- texture:SetColor(1, 1, 1, 1)
+end
+
+local function InventoryGridViewLoaded(eventCode, addOnName)
+    if(addOnName ~= "InventoryGridView") then return end
+    EVENT_MANAGER:UnregisterForEvent("InventoryGridViewLoaded", EVENT_ADD_ON_LOADED)
 
     IGVSettings = InventoryGridViewSettings:New()
 
-    local controlWidth = BAGS.controlHeight
+    --Set up different backpacks
+    --common attributes
     local leftPadding = 25
+
+    --Player's inventory
+    local controlWidth = BAGS.controlHeight
     local contentsWidth = BAGS:GetNamedChild("Contents"):GetWidth()
     local itemsPerRow = zo_floor((contentsWidth - leftPadding) / (controlWidth))
     local gridSpacing = ((contentsWidth - leftPadding) % itemsPerRow) / itemsPerRow
-
     BAGS.forceUpdate = false
     BAGS.listHeight = controlWidth
     BAGS.leftPadding = leftPadding
@@ -176,9 +174,11 @@ local function InventoryGridViewLoaded(eventCode, addOnName)
     BAGS.isOutlines = IGVSettings:IsAllowOutline()
     BAGS.gridSize = IGVSettings:GetGridSize()
 
+    --Player's quest item inventory
     controlWidth = QUEST.controlHeight
     contentsWidth = QUEST:GetNamedChild("Contents"):GetWidth()
-
+    itemsPerRow = zo_floor((contentsWidth - leftPadding) / (controlWidth))
+    gridSpacing = ((contentsWidth - leftPadding) % itemsPerRow) / itemsPerRow
     QUEST.forceUpdate = true
     QUEST.listHeight = controlWidth
     QUEST.leftPadding = leftPadding
@@ -190,9 +190,11 @@ local function InventoryGridViewLoaded(eventCode, addOnName)
     QUEST.isOutlines = IGVSettings:IsAllowOutline()
     QUEST.gridSize = IGVSettings:GetGridSize()
 
+    --Player's bank
     controlWidth = BANK.controlHeight
     contentsWidth = BANK:GetNamedChild("Contents"):GetWidth()
-
+    itemsPerRow = zo_floor((contentsWidth - leftPadding) / (controlWidth))
+    gridSpacing = ((contentsWidth - leftPadding) % itemsPerRow) / itemsPerRow
     BANK.forceUpdate = true
     BANK.listHeight = controlWidth
     BANK.leftPadding = leftPadding
@@ -204,9 +206,11 @@ local function InventoryGridViewLoaded(eventCode, addOnName)
     BANK.isOutlines = IGVSettings:IsAllowOutline()
     BANK.gridSize = IGVSettings:GetGridSize()
 
+    --Guild banks
     controlWidth = GUILD_BANK.controlHeight
     contentsWidth = GUILD_BANK:GetNamedChild("Contents"):GetWidth()
-
+    itemsPerRow = zo_floor((contentsWidth - leftPadding) / (controlWidth))
+    gridSpacing = ((contentsWidth - leftPadding) % itemsPerRow) / itemsPerRow
     GUILD_BANK.forceUpdate = true
     GUILD_BANK.listHeight = controlWidth
     GUILD_BANK.leftPadding = leftPadding
@@ -218,9 +222,11 @@ local function InventoryGridViewLoaded(eventCode, addOnName)
     GUILD_BANK.isOutlines = IGVSettings:IsAllowOutline()
     GUILD_BANK.gridSize = IGVSettings:GetGridSize()
 
+    --Vendor inventories (Buy and Sell)
     controlWidth = STORE.controlHeight
     contentsWidth = STORE:GetNamedChild("Contents"):GetWidth()
-
+    itemsPerRow = zo_floor((contentsWidth - leftPadding) / (controlWidth))
+    gridSpacing = ((contentsWidth - leftPadding) % itemsPerRow) / itemsPerRow
     STORE.forceUpdate = true
     STORE.listHeight = controlWidth
     STORE.leftPadding = leftPadding
@@ -232,9 +238,11 @@ local function InventoryGridViewLoaded(eventCode, addOnName)
     STORE.isOutlines = IGVSettings:IsAllowOutline()
     STORE.gridSize = IGVSettings:GetGridSize()
 
+    --Vendor buyback
     controlWidth = BUYBACK.controlHeight
     contentsWidth = BUYBACK:GetNamedChild("Contents"):GetWidth()
-
+    itemsPerRow = zo_floor((contentsWidth - leftPadding) / (controlWidth))
+    gridSpacing = ((contentsWidth - leftPadding) % itemsPerRow) / itemsPerRow
     BUYBACK.forceUpdate = true
     BUYBACK.listHeight = controlWidth
     BUYBACK.leftPadding = leftPadding
@@ -246,9 +254,9 @@ local function InventoryGridViewLoaded(eventCode, addOnName)
     BUYBACK.isOutlines = IGVSettings:IsAllowOutline()
     BUYBACK.gridSize = IGVSettings:GetGridSize()
 
+    --Crafting refinement
     --[[controlWidth = REFINE.controlHeight
     contentsWidth = REFINE:GetNamedChild("Contents"):GetWidth()
-
     REFINE.forceUpdate = true
     REFINE.listHeight = controlWidth
     REFINE.leftPadding = leftPadding
@@ -275,14 +283,10 @@ local function InventoryGridViewLoaded(eventCode, addOnName)
     AddButton(STORE:GetParent(), STORE.bagId)
     AddButton(BUYBACK:GetParent(), BUYBACK.bagId)
     --AddButton(REFINE:GetParent(), REFINE.bagId)
+
     InventoryGridView_SetToggleButtonTexture()
 
     ZO_PreHook("ZO_InventorySlot_OnMouseEnter", AddGoldSoon)
 end
 
---initialize
-local function InventoryGridViewInitialized()
-	EVENT_MANAGER:RegisterForEvent("InventoryGridViewLoaded", EVENT_ADD_ON_LOADED, InventoryGridViewLoaded)
-end
-
-InventoryGridViewInitialized()
+EVENT_MANAGER:RegisterForEvent("InventoryGridViewLoaded", EVENT_ADD_ON_LOADED, InventoryGridViewLoaded)
