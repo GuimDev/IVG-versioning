@@ -316,75 +316,6 @@ local function ResizeScrollBar(self, scrollableDistance)
         end
     end
 end
-
---tooltip.lua line 79
-local function CalculateQuandrant(ownerMiddleX, ownerMiddleY, middleScreenX, middleScreenY)
-    if ownerMiddleX >= middleScreenX and ownerMiddleY < middleScreenY then
-        return QUAD_TOPRIGHT
-    elseif ownerMiddleX >= middleScreenX and ownerMiddleY >= middleScreenY then
-        return QUAD_BOTTOMRIGHT
-    elseif ownerMiddleX < middleScreenX and ownerMiddleY >= middleScreenY then
-        return QUAD_BOTTOMLEFT
-    end
-
-    return QUAD_TOPLEFT
-end
-
---tooltip.lua line 91
-local function ValidateComparativeTooltip(comparativeTooltip)
-    if comparativeTooltip and not comparativeTooltip:IsHidden() then
-        return comparativeTooltip
-    end
-    return nil
-end
-
---tooltip.lua line 98
-local StartWatchingComparisonDynamicAnchor
-do
-    local g_comparisonDynamicAnchors = {}
-
-    local function DynamicAnchorLayout(tooltip, owner, quadrant, comparativeTooltip1, comparativeTooltip2)
-        if comparativeTooltip1 and comparativeTooltip2 then
-            if quadrant == QUAD_TOPLEFT or quadrant == QUAD_BOTTOMLEFT then
-                comparativeTooltip1:SetOwner(tooltip, TOPLEFT, BETWEEN_TOOLTIP_OFFSET_X, 0)
-                comparativeTooltip2:SetOwner(comparativeTooltip1, TOPLEFT, 0, BETWEEN_TOOLTIP_OFFSET_Y, BOTTOMLEFT)
-            else
-                comparativeTooltip1:SetOwner(tooltip, TOPRIGHT, -BETWEEN_TOOLTIP_OFFSET_X, 0)
-                comparativeTooltip2:SetOwner(comparativeTooltip1, TOPLEFT, 0, BETWEEN_TOOLTIP_OFFSET_Y, BOTTOMLEFT)
-            end
-
-            comparativeTooltip1:SetClampedToScreenInsets(0, comparativeTooltip1.topClampedToScreenInset, 0, comparativeTooltip2:GetHeight() + BETWEEN_TOOLTIP_OFFSET_Y)
-            comparativeTooltip2:SetClampedToScreenInsets(0, comparativeTooltip2.topClampedToScreenInset, 0, 0)
-        elseif comparativeTooltip1 then
-            if quadrant == QUAD_TOPLEFT or quadrant == QUAD_BOTTOMLEFT then
-                comparativeTooltip1:SetOwner(tooltip, TOPLEFT, BETWEEN_TOOLTIP_OFFSET_X, 0)
-                comparativeTooltip1:SetClampedToScreenInsets(0, comparativeTooltip1.topClampedToScreenInset, 0, 0)
-            else
-                comparativeTooltip1:SetOwner(tooltip, TOPRIGHT, -BETWEEN_TOOLTIP_OFFSET_X, 0)
-                comparativeTooltip1:SetClampedToScreenInsets(0, comparativeTooltip1.topClampedToScreenInset, 0, 0)
-            end
-        end
-    end
-
-    local function UpdateComparisonDynamicAnchors()
-        for tooltip, anchorInfo in pairs(g_comparisonDynamicAnchors) do
-            if tooltip:IsControlHidden() then
-                g_comparisonDynamicAnchors[tooltip] = nil
-            else
-                DynamicAnchorLayout(tooltip, unpack(anchorInfo))
-            end
-        end
-    end
-    EVENT_MANAGER:RegisterForUpdate("UpdateComparisonDynamicAnchors", 0, UpdateComparisonDynamicAnchors)
-
-    function StartWatchingComparisonDynamicAnchor(tooltip, owner, quadrant, comparativeTooltip1, comparativeTooltip2)
-        if comparativeTooltip1 then
-            g_comparisonDynamicAnchors[tooltip] = { owner, quadrant, comparativeTooltip1, comparativeTooltip2 }
-        else
-            g_comparisonDynamicAnchors[tooltip] = nil
-        end
-    end
-end
 --end copied functions----------------------------------------------------------
 
 --------------------------------------------------------------------------------
@@ -579,58 +510,44 @@ local function ScrollController(self)
     end
 end
 
+--function to set custom icon scaling
+local function CreateSlotAnimation(inventorySlot)
+    if inventorySlot.slotControlType == "listSlot" and inventorySlot.isGrid == true then
+        local control = inventorySlot
+        local controlType = inventorySlot:GetType()
+ 
+        if (controlType == CT_CONTROL and control.slotControlType == "listSlot") then
+            control = inventorySlot:GetNamedChild("MultiIcon") or inventorySlot:GetNamedChild("Button")
+        end
+ 
+ 		--want to force refresh of control animation
+        if (control --[[and not control.animation]]) then
+            control.animation = ANIMATION_MANAGER:CreateTimelineFromVirtual("IconSlotMouseOverAnimation", control)
+            control.animation:GetFirstAnimation():SetEndScale(SHARED_INVENTORY.IGViconZoomLevel)
+        end
+    end
+end
+
+--function to set tooltip offset
 local function igvTooltipAnchor(tooltip, buttonPart, comparativeTooltip1, comparativeTooltip2)
     -- call the regular one, not ideal but probably better than copying most of the code here :)
     ZO_Tooltips_SetupDynamicTooltipAnchors(tooltip, buttonPart, comparativeTooltip1, comparativeTooltip2)
     -- custom setup
-    if buttonPart:GetParent().isGrid then
-        --tooltip:ClearAnchors()
+    if InventoryGridViewSettings:IsTooltipOffset() and buttonPart:GetParent().isGrid then
+        tooltip:ClearAnchors()
         local gridSize = InventoryGridViewSettings:GetGridSize()
-        local col = ((buttonPart:GetLeft() - 1432) / gridSize) + 1
+        local edge = ZO_PlayerInventoryBackpackContents:GetLeft()
+        local col = ((buttonPart:GetLeft() - edge) / gridSize) + 1
         local offsetX = -(gridSize * col - gridSize)
         tooltip:SetOwner(buttonPart, RIGHT, offsetX, 0)
     end
 end
 
---[[local function igvTooltipAnchor(tooltip, buttonPart, comparativeTooltip1, comparativeTooltip2)
-    if tooltip and buttonPart then
-        local left, top, right, bottom = buttonPart:GetScreenRect()
-        local ownerScale = buttonPart:GetScale()
-        local ownerMiddleX = (left + right) / (2 * ownerScale)
-        local ownerMiddleY = (top + bottom) / (2 * ownerScale)
-        
-        local screenWidth, screenHeight = GuiRoot:GetDimensions()
-        local middleScreenX = screenWidth / 2
-        local middleScreenY = screenHeight / 2
-        
-        local quadrant = CalculateQuandrant(ownerMiddleX, ownerMiddleY, middleScreenX, middleScreenY)
-
-        tooltip:ClearAnchors()
-
-        -- custom setup
-        if buttonPart:GetParent().isGrid then
-            local gridSize = InventoryGridViewSettings:GetGridSize()
-            local col = ((buttonPart:GetLeft() - 1432) / gridSize) + 1
-            local offsetX = -(gridSize * col - gridSize)
-            tooltip:SetOwner(buttonPart, RIGHT, offsetX, 0)
-        end
-
-        comparativeTooltip1 = ValidateComparativeTooltip(comparativeTooltip1)
-        comparativeTooltip2 = ValidateComparativeTooltip(comparativeTooltip2)
-        
-        if comparativeTooltip2 and not comparativeTooltip1 then
-            comparativeTooltip1 = comparativeTooltip2
-            comparativeTooltip2 = nil
-        end
-
-        StartWatchingComparisonDynamicAnchor(tooltip, buttonPart, quadrant, comparativeTooltip1, comparativeTooltip2)
-    end
-end]]
-
 --add necessary fields to the default UI's controls to facilitate the grid view
 --and hook necessary functions for operation.
 function InitGridView( isGrid )
     ZO_PreHook("ZO_ScrollList_UpdateScroll", ScrollController)
+    ZO_PreHook("ZO_InventorySlot_OnMouseEnter", CreateSlotAnimation)
 
     for _,v in pairs(PLAYER_INVENTORY.inventories) do
         local listView = v.listView
@@ -640,7 +557,7 @@ function InitGridView( isGrid )
             listView.dataTypes[1].setupCallback = 
                 function(rowControl, slot)                      
                     rowControl.isGrid = isGrid
-                    --rowControl:GetNamedChild("Button").customTooltipAnchor = igvTooltipAnchor
+                    rowControl:GetNamedChild("Button").customTooltipAnchor = igvTooltipAnchor
                     hookedFunctions(rowControl, slot)
                 end
         end

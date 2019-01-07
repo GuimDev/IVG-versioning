@@ -1,7 +1,7 @@
 ------------------------------------------------------------------
 --InventoryGridView.lua
 --Author: ingeniousclown, Randactyl
---v1.3.6.0
+--v1.4.0.0
 
 --InventoryGridView was designed to try and leverage the default
 --UI as much as possible to create a grid view.  The result is
@@ -267,6 +267,8 @@ local function InventoryGridViewLoaded(eventCode, addOnName)
     REFINE.isGrid = IGVSettings:IsGrid(REFINE.bagId)
     REFINE.isOutlines = IGVSettings:IsAllowOutline()
     REFINE.gridSize = IGVSettings:GetGridSize()]]
+
+    SHARED_INVENTORY.IGViconZoomLevel = IGVSettings:GetIconZoomLevel()
 
     InitGridView()
     InventoryGridView_ToggleOutlines(BAGS, IGVSettings:IsAllowOutline())

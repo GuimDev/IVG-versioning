@@ -70,7 +70,9 @@ function InventoryGridViewSettings:Initialize()
         gridSize = 52,
         minimumQuality = "Magic",
         skinChoice = "Rushmik",
-        valueTooltip = true
+        valueTooltip = true,
+        iconZoomLevel = 1.5,
+        isTooltipOffset = true,
     }
 
     settings = ZO_SavedVars:New("InventoryGridView_Settings", 2, nil, defaults)
@@ -130,6 +132,14 @@ function InventoryGridViewSettings:GetTextureSet()
 	return TEXTURES[settings.skinChoice]
 end
 
+function InventoryGridViewSettings:GetIconZoomLevel()
+	return settings.iconZoomLevel
+end
+
+function InventoryGridViewSettings:IsTooltipOffset()
+	return settings.isTooltipOffset
+end
+
 function InventoryGridViewSettings:IsShowValueTooltip()
 	return settings.valueTooltip
 end
@@ -164,9 +174,10 @@ function InventoryGridViewSettings:CreateOptionsMenu()
 		type = "panel",
 		name = "Inventory Grid View",
 		author = "ingeniousclown and Randactyl",
-		version = "1.3.7.0",
+		version = "1.4.0.0",
 		slashCommand = "/inventorygridview",
-		registerForRefresh = true
+		registerForRefresh = true,
+		--registerForDefaults = true,
 	}
 
 	local optionsData = {
@@ -186,10 +197,9 @@ function InventoryGridViewSettings:CreateOptionsMenu()
 					end,
 			reference = "IGV_Skin_Dropdown"
 		},
-
 		[2] = {
 			type = "checkbox",
-			name = "Rarity outlines",
+			name = "Rarity Outlines",
 			tooltip = "Toggle the outlines on or off.",
 			getFunc = function()
 						return self:IsAllowOutline() 
@@ -207,10 +217,9 @@ function InventoryGridViewSettings:CreateOptionsMenu()
 					end,
 			reference = "IGV_Rarity_Outlines"
 		},
-
 		[3] = {
 			type = "dropdown",
-			name = "Minimum outline quality",
+			name = "Minimum Outline Quality",
 			tooltip = "Don't show outlines under this quality",
 			choices = QUALITY_OPTIONS,
 			getFunc = function() return settings.minimumQuality end,
@@ -221,10 +230,9 @@ function InventoryGridViewSettings:CreateOptionsMenu()
 			disabled = function() return not self:IsAllowOutline() end,
 			reference = "IGV_Min_Rarity_Dropdown"
 		},
-
 		[4] = {
 			type = "slider",
-			name = "Grid size",
+			name = "Grid Size",
 			tooltip = "Set how big or small the grid icons are.",
 			min = 24,
 			max = 96,
@@ -250,18 +258,38 @@ function InventoryGridViewSettings:CreateOptionsMenu()
 					end,
 			reference = "IGV_Grid_Size"
 		},
-
-		[5] = custom,
-
-		[6] = {
+		[5] = {
+			type = "slider",
+			name = "Icon Zoom Level",
+			tooltip = "Set icon zoom level from none to default",
+			min = 100,
+			max = 150,
+			step = 10,
+			getFunc = function() return settings.iconZoomLevel * 100 end,
+			setFunc = function(value) 
+						  settings.iconZoomLevel = value / 100
+						  SHARED_INVENTORY.IGViconZoomLevel = value / 100
+					  end,
+		},
+		[6] = custom,
+		[7] = {
 			type = "checkbox",
-			name = "Tooltip gold",
+			name = "Tooltip Gold",
 			tooltip = "Should we add the stack's value to the tooltip in grid view?",
 			getFunc = function() return settings.valueTooltip end,
 			setFunc = function(value)
 						settings.valueTooltip = value
 					end,
 			reference = "IGV_Value_Tooltip"
+		},
+		[8] = {
+			type = "checkbox",
+			name = "Offset Item Tooltips",
+			tooltip = "Should we move item tooltips so they do not cover the item grid?",
+			getFunc = function() return settings.isTooltipOffset end,
+			setFunc = function(value)
+						settings.isTooltipOffset = value
+					  end,
 		},
 	}
 
