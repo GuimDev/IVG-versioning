@@ -458,6 +458,8 @@ end
 function adapter.ToggleGrid()
     local IGVId = IGV.currentIGVId
     local scrollList = IGV.currentScrollList
+    
+    util.debug("Toggle grid for " .. (IGVId or "nil"))
 
     if not scrollList then return end
 
