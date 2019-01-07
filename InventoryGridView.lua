@@ -1,7 +1,7 @@
 --[[----------------------------------------------------------------------------
     InventoryGridView.lua
     Author: Randactyl, ingeniousclown
-    Version: 1.5.0.0
+    Version: 1.5.1.0
     Inventory Grid View was designed to leverage the default UI as much as
     possible to create a grid view scroll list. The result is somewhat hacky,
     but it works well.
@@ -13,7 +13,7 @@ local IGVSettings = nil
 local toggleButtonTextures = {}
 
 function InventoryGridView_SetToggleButtonTexture()
-    for _,v in pairs(toggleButtonTextures) do
+    for _, v in pairs(toggleButtonTextures) do
         v:SetTexture(IGVSettings:GetTextureSet().TOGGLE)
     end
 end
@@ -22,7 +22,7 @@ local function ButtonClickHandler(button)
     IGVSettings:ToggleGrid(button.IGVId)
 
     -- quest bag uses the same button as inventory, have to piggyback instead of making separate button
-    if(button.IGVId == INVENTORY_BACKPACK) then
+    if button.IGVId == INVENTORY_BACKPACK then
         InventoryGridView_ToggleGrid(button.itemArea:GetParent():GetNamedChild("Quest"), not button.itemArea.isGrid)
     end
     InventoryGridView_ToggleGrid(button.itemArea, not button.itemArea.isGrid)
@@ -56,7 +56,7 @@ local function AddButton(parentWindow, IGVId)
 end
 
 local function InventoryGridViewLoaded(eventCode, addOnName)
-    if(addOnName ~= "InventoryGridView") then return end
+    if addOnName ~= "InventoryGridView" then return end
     EVENT_MANAGER:UnregisterForEvent("InventoryGridViewLoaded", EVENT_ADD_ON_LOADED)
 
     IGVSettings = InventoryGridViewSettings:New()
@@ -73,7 +73,7 @@ local function InventoryGridViewLoaded(eventCode, addOnName)
         [7] = ZO_QuickSlotList,
         --[8] = ZO_SmithingTopLevelRefinementPanelInventoryBackpack,
     }
-    for IGVId,bag in ipairs(bags) do
+    for IGVId, bag in ipairs(bags) do
         local controlWidth = bag.controlHeight
         local contentsWidth = bag:GetNamedChild("Contents"):GetWidth()
         local itemsPerRow = zo_floor((contentsWidth - leftPadding) / (controlWidth))
