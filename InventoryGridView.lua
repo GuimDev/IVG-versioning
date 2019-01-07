@@ -1,7 +1,7 @@
 ------------------------------------------------------------------
 --InventoryGridView.lua
 --Author: ingeniousclown, Randactyl
---v1.3
+--v1.3.1
 
 --InventoryGridView was designed to try and leverage the default
 --UI as much as possible to create a grid view.  The result is
@@ -66,6 +66,49 @@ local function AddButton(parentWindow, inventoryId)
     -- texture:SetColor(1, 1, 1, 1)
 end
 
+--override this function so I can display AP cost in the store view. Added currencyType.
+function ZO_ItemTooltip_AddMoney(tooltipControl, amount, reason, notEnough, currencyType)
+    local moneyLine = GetControl(tooltipControl, "SellPrice")        
+    local reasonLabel = GetControl(moneyLine, "Reason")
+    local currencyControl = GetControl(moneyLine, "Currency")
+
+    local currencyType = currencyType or CURRENCY_TYPE_MONEY
+        
+    moneyLine:SetHidden(false)    
+   
+    local width = 0
+    reasonLabel:ClearAnchors()
+    currencyControl:ClearAnchors()
+    
+     -- right now reason is always a string index
+    if(reason and reason ~= 0) then
+        reasonLabel:SetAnchor(TOPLEFT, nil, TOPLEFT, 0, 0)
+        currencyControl:SetAnchor(TOPLEFT, reasonLabel, TOPRIGHT, REASON_CURRENCY_SPACING, -2)
+
+        reasonLabel:SetHidden(false)
+        reasonLabel:SetColor(SELL_REASON_COLOR:UnpackRGBA())
+        reasonLabel:SetText(GetString(reason))
+        
+        local reasonTextWidth, reasonTextHeight = reasonLabel:GetTextDimensions()
+        width = width + reasonTextWidth + REASON_CURRENCY_SPACING
+    else
+        reasonLabel:SetHidden(true)
+        currencyControl:SetAnchor(TOPLEFT, nil, TOPLEFT, 0, 0)
+    end
+
+    if(amount > 0) then
+        currencyControl:SetHidden(false)
+        ZO_CurrencyControl_SetSimpleCurrency(currencyControl, currencyType, amount, ITEM_TOOLTIP_CURRENCY_OPTIONS, CURRENCY_DONT_SHOW_ALL, notEnough)
+        width = width + currencyControl:GetWidth()
+    else
+        currencyControl:SetHidden(true)
+    end
+
+    tooltipControl:AddControl(moneyLine)
+    moneyLine:SetAnchor(CENTER)
+    moneyLine:SetDimensions(width, MONEY_LINE_HEIGHT)
+end
+
 --rowControl: the item control
 local function AddGold(rowControl)
     if(not rowControl.dataEntry) then return end
@@ -73,11 +116,24 @@ local function AddGold(rowControl)
     local bagId = rowControl.dataEntry.data.bagId or rowControl:GetParent():GetParent().bagId
     local slotIndex = rowControl.dataEntry.data.slotIndex
     local _, stack, sellPrice
+    local currencyType, notEnough
+
+    for _,v in pairs(rowControl:GetNamedChild("SellPrice").currencyArgs) do
+    	if(v.isUsed == true) then 
+    		currencyType = v.type
+    		notEnough = v.notEnough
+    	end
+    end
 
     if bagId == STORE.bagId or bagId == BUYBACK.bagId then
-    	sellPrice = rowControl.dataEntry.data.price
+    	if(currencyType == CURRENCY_TYPE_ALLIANCE_POINTS) then
+    		sellPrice = rowControl.dataEntry.data.currencyQuantity1
+    	else
+    		sellPrice = rowControl.dataEntry.data.price
+    	end
     	stack = rowControl.dataEntry.data.stack
-    	ZO_ItemTooltip_AddMoney(ItemTooltip, sellPrice * stack)
+
+    	ZO_ItemTooltip_AddMoney(ItemTooltip, sellPrice * stack, 0, notEnough, currencyType)
     else
     	_, stack, sellPrice = GetItemInfo(bagId, slotIndex)
         ZO_ItemTooltip_AddMoney(ItemTooltip, sellPrice * stack)
