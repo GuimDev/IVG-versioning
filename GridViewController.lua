@@ -510,42 +510,22 @@ local function ScrollController(self)
     end
 end
 
---postHook function for "ZO_InventorySlot_OnMouseEnter"
---Sets the ItemTooltip owner and offset so that tooltips always appear at the 
---beginning of a gridded row.
-local function ReinitializeTooltip(inventorySlot)
-	local isGrid = inventorySlot.isGrid
-    if isGrid == true then
+local function igvTooltipAnchor(tooltip, buttonPart, comparativeTooltip1, comparativeTooltip2)
+    -- call the regular one, not ideal but probably better than copying most of the code here :)
+    ZO_Tooltips_SetupDynamicTooltipAnchors(tooltip, inventorySlot, comparativeTooltip1, comparativeTooltip2)
+    -- custom setup
+    if buttonPart:GetParent().isGrid then
         local gridSize = InventoryGridViewSettings:GetGridSize()
-        local col = ((inventorySlot:GetLeft() - 1432) / gridSize) + 1
+        local col = ((buttonPart:GetLeft() - 1432) / gridSize) + 1
         local offsetX = -(gridSize * col - gridSize)
-
-        ItemTooltip:SetOwner(inventorySlot, RIGHT, offsetX, 0)
-   	end
-end
-
---implementation of general postHook found on ESOUI specific to IGV's purposes
-local function IGV_OnMouseEnter_postHook(funcName, callback)
-	--"ZO_InventorySlot_OnMouseEnter" is being hooked
-  	local tmp = _G[funcName]
- 	_G[funcName] = function(...)
- 		--ZO_InventorySlot_OnMouseEnter returns true if a tooltip was 
- 		--successfully shown, false if a tooltip was hidded.
-    	local returnValue = tmp(...)
-    	if(returnValue == true) then
-    		--make ZO_InventorySlot_OnMouseEnter's arguments availible to
-    		--my function.
-    		callback(...)
-    	end
-    	return returnValue
-  	end
+        tooltip:SetOwner(buttonPart, RIGHT, offsetX, 0)
+    end
 end
 
 --add necessary fields to the default UI's controls to facilitate the grid view
 --and hook necessary functions for operation.
 function InitGridView( isGrid )
     ZO_PreHook("ZO_ScrollList_UpdateScroll", ScrollController)
-    IGV_OnMouseEnter_postHook("ZO_InventorySlot_OnMouseEnter", ReinitializeTooltip)
 
     for _,v in pairs(PLAYER_INVENTORY.inventories) do
         local listView = v.listView
@@ -555,8 +535,9 @@ function InitGridView( isGrid )
             listView.dataTypes[1].setupCallback = 
                 function(rowControl, slot)                      
                     rowControl.isGrid = isGrid
+                    rowControl:GetNamedChild("Button").customTooltipAnchor = igvTooltipAnchor
                     hookedFunctions(rowControl, slot)
-                end             
+                end
         end
     end
 end
